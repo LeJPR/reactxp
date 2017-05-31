@@ -40,8 +40,24 @@ blockPointerEvents: boolean = false; // iOS and Android only
 // components behind to receive them
 ignorePointerEvents: boolean = false; // web only
 
-// Can the component accept keyboard focus?
-focusable: boolean = false; // web only
+// When keyboard navigation is happening, restrict the focusable
+// elements within this view. Useful for popups and modals, you
+// might want to prevent the focus from going outside of the popup or
+// modal. The views with restrictFocusWithin are stacked and the last
+// mounted view is a winner. This means if you, for example, have
+// restricted the focus within some modal, and you have a popup (which
+// also desires for a restricted focus) inside this modal, the popup
+// will get the restriction, but when dismissed, the restriction will
+// be restored for the modal.
+// WARNING: For the sake of performance, this property is readonly and
+// changing it during the View life cycle will produce an error.
+restrictFocusWithin: boolean = false; // web only
+
+// Additional invisible DOM elements will be added inside the view
+// to track the size changes that are performed behind our back by
+// the browser's layout engine faster (ViewBase checks for the layout
+// updates once a second and sometimes it's not fast enough)
+importantForLayout?: boolean = false; // web only
 
 // Mouse-specific Events
 onDragEnter?: (e: DragEvent) => void = undefined;
@@ -85,7 +101,7 @@ tabIndex: number = undefined;
 title: string = undefined;
 
 // See below for supported styles
-style_ ViewStyleRuleSet | ViewStyleRuleSet[] = [];
+style: ViewStyleRuleSet | ViewStyleRuleSet[] = [];
 
 // Should use hardware or software rendering?
 viewLayerTypeAndroid: 'none' | 'software' | 'hardware'; // Android only property
@@ -97,7 +113,7 @@ disableTouchOpacityAnimation?: boolean;  // iOS and Android only
 // Opacity value the button should animate to, on touch on views that have onPress handlers.
 activeOpacity?: number; // iOS and Android only
 
-// Background color that will be visible on touch on views that have onPress handlers. 
+// Background color that will be visible on touch on views that have onPress handlers.
 underlayColor?: string; // ßiOS and Android only
 ```
 

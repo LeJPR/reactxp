@@ -4,110 +4,68 @@
 
 import RX = require('reactxp');
 
-import ToggleSwitch from './ToggleSwitch';
+import MainPanel = require('./MainPanel');
+import SecondPanel = require('./SecondPanel');
 
-interface AppState {
-    toggleValue?: boolean;
+enum NavigationRouteId {
+    MainPanel,
+    SecondPanel
 }
 
 const styles = {
-    container: RX.Styles.createViewStyle({
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+    navCardStyle: RX.Styles.createViewStyle({
         backgroundColor: '#f5fcff'
-    }),
-    helloWorld: RX.Styles.createTextStyle({
-        fontSize: 48,
-        fontWeight: 'bold',
-        marginBottom: 28
-    }),
-    welcome: RX.Styles.createTextStyle({
-        fontSize: 32,
-        marginBottom: 12
-    }),
-    instructions: RX.Styles.createTextStyle({
-        fontSize: 16,
-        color: '#aaa',
-        marginBottom: 40
-    }),
-    docLink: RX.Styles.createLinkStyle({
-        fontSize: 16,
-        color: 'blue',
-        marginBottom: 40
-    }),
-    toggleTitle: RX.Styles.createTextStyle({
-        fontSize: 16,
-        color: 'black'
     })
 };
 
-class App extends RX.Component<null, AppState> {
-    private _translationValue: RX.Animated.Value;
-    private _animatedStyle: RX.Types.AnimatedTextStyleRuleSet;
-
-    constructor() {
-        super();
-
-        this._translationValue = new RX.Animated.Value(-100);
-        this._animatedStyle = RX.Styles.createAnimatedTextStyle({
-            transform: [
-                {
-                    translateY: this._translationValue
-                }
-            ]
-        });
-
-        this.state = {
-            toggleValue: true
-        };
-    }
+class App extends RX.Component<null, null> {
+    private _navigator: RX.Navigator;
 
     componentDidMount() {
-        let animation = RX.Animated.timing(this._translationValue, {
-              toValue: 0,
-              easing: RX.Animated.Easing.OutBack(),
-              duration: 500
-            }
-        );
-
-        animation.start();
+        this._navigator.immediatelyResetRouteStack([{
+            routeId: NavigationRouteId.MainPanel,
+            sceneConfigType: RX.Types.NavigatorSceneConfigType.Fade
+        }]);
     }
 
-    render(): JSX.Element | null {
+    render() {
         return (
-            <RX.View style={ styles.container }>
-                <RX.Animated.Text style={ [styles.helloWorld, this._animatedStyle] }>
-                    Hello World
-                </RX.Animated.Text>
-                <RX.Text style={ styles.welcome }>
-                    Welcome to ReactXP
-                </RX.Text>
-                <RX.Text style={ styles.instructions }>
-                    Edit App.tsx to get started
-                </RX.Text>
-                <RX.Link style={ styles.docLink } url={ 'https://microsoft.github.io/reactxp/docs' }>
-                    View ReactXP documentation
-                </RX.Link>
-
-                <RX.Text style={ styles.toggleTitle }>
-                    Here is a simple control built using ReactXP
-                </RX.Text>
-                <ToggleSwitch
-                    value={ this.state.toggleValue }
-                    onChange={ this._onChangeToggle }
-                />
-            </RX.View>
+            <RX.Navigator
+                ref={ this._onNavigatorRef }
+                renderScene={ this._renderScene }
+                cardStyle={ styles.navCardStyle }
+            />
         );
     }
 
-    // Note that we define this as a variable rather than a normal method. Using this
-    // method, we prebind the method to this component instance. This prebinding ensures
-    // that each time we pass the variable as a prop in the render function, it will
-    // not change. We want to avoid unnecessary prop changes because this will trigger
-    // extra work within React's virtual DOM diffing mechanism.
-    private _onChangeToggle = (newValue: boolean) => {
-        this.setState({ toggleValue: newValue });
+    private _onNavigatorRef = (navigator: RX.Navigator) => {
+        this._navigator = navigator;
+    }
+
+    private _renderScene = (navigatorRoute: RX.Types.NavigatorRoute) => {
+        switch (navigatorRoute.routeId) {
+            case NavigationRouteId.MainPanel:
+                return <MainPanel onPressNavigate={ this._onPressNavigate } />
+
+            case NavigationRouteId.SecondPanel:
+                return <SecondPanel onNavigateBack={ this._onPressBack } />
+        }
+
+        return null;
+    }
+
+    private _onPressNavigate = () => {
+        this._navigator.push({
+            routeId: NavigationRouteId.SecondPanel,
+            sceneConfigType: RX.Types.NavigatorSceneConfigType.FloatFromRight,
+            customSceneConfig: {
+                hideShadow: true
+            }
+        });
+    }
+
+    private _onPressBack = () => {
+        this._navigator.pop();
     }
 }
 

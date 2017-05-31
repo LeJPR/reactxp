@@ -76,7 +76,8 @@ export class TextInput extends RX.TextInput<TextInputState> {
                 onFocus={ this._onFocus }
                 onBlur={ this._onBlur }
                 onScroll={ this._onScroll }
-                selection={{ start: this._selectionStart, end: this._selectionEnd}}
+                selection={{ start: this._selectionStart, end: this._selectionEnd }}
+                secureTextEntry={ this.props.secureTextEntry }
 
                 textAlign={ this.props.textAlign }
                 keyboardAppearance={ this.props.keyboardAppearance }
@@ -86,6 +87,7 @@ export class TextInput extends RX.TextInput<TextInputState> {
                 textBreakStrategy={ 'simple' }
                 accessibilityLabel={ this.props.accessibilityLabel }
                 allowFontScaling={ this.props.allowFontScaling }
+                maxContentSizeMultiplier={ this.props.maxContentSizeMultiplier }
                 underlineColorAndroid='transparent'
             />
         );

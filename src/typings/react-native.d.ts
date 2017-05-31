@@ -115,6 +115,7 @@ declare module 'react-native' {
     interface TextProps extends ComponentPropsStyleBase {
         importantForAccessibility?: string; // 'auto' | 'yes' | 'no' | 'no-hide-descendants';
         allowFontScaling?: boolean;
+        maxContentSizeMultiplier?: number;
         children?        : React.ReactNode;
         numberOfLines?   : number;
         ellipsizeMode?   : 'head' | 'middle' | 'tail' // There's also 'clip' but it is iOS only
@@ -343,6 +344,7 @@ declare module 'react-native' {
         testID?: string;
         textAlign?: string; // enum('auto' | 'left' | 'right' | 'center' | 'justify')
         allowFontScaling?: boolean;
+        maxContentSizeMultiplier?: number;
         selection?: { start: number, end: number };
 
         //iOS and android
@@ -701,6 +703,7 @@ declare module 'react-native' {
         static addEventListener(type: string, handler: (event: any) => void): void;
         static removeEventListener(type: string, handler: (event: any) => void): void;
         static announceForAccessibility(announcement: string): void;
+        static setAccessibilityFocus(reactTag: number): void;
     }
 
     interface AlertButtonSpec {
@@ -816,6 +819,8 @@ declare module 'react-native' {
         dispatchViewManagerCommand: Function;
 
         getContentSizeMultiplier: Function;
+        getMaxContentSizeMultiplier: Function;
+        setMaxContentSizeMultiplier: Function;
 
         // ios
         takeSnapshot: (view: any, options?: SnapshotOptions) => Promise<string>;
@@ -1332,6 +1337,14 @@ declare module 'react-native' {
      module InteractionManager {
          function setDeadline(deadline: number): void;
      }
+
+    interface I18nManager {
+        isRTL: boolean
+        allowRTL: (allowRTL: boolean) => {}
+        forceRTL: (forceRTL: boolean) => {}
+    }
+
+    export var I18nManager: I18nManager;
 }
 
 interface GeoConfiguration {
@@ -1342,3 +1355,4 @@ interface Geolocation {
     // React Native addition to navigator.geolocation
     setRNConfiguration(config: GeoConfiguration): void;
 }
+

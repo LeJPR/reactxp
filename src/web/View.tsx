@@ -8,6 +8,8 @@
 */
 
 import React = require('react');
+import ReactDOM = require('react-dom');
+import PropTypes = require('prop-types');
 
 import AccessibilityUtil from './AccessibilityUtil';
 import AnimateListEdits from './listAnimations/AnimateListEdits';
@@ -15,6 +17,7 @@ import restyleForInlineText = require('./utils/restyleForInlineText');
 import Styles from './Styles';
 import Types = require('../common/Types');
 import ViewBase from './ViewBase';
+import { FocusManager, applyFocusableComponentMixin } from './utils/FocusManager';
 
 const _styles = {
     defaultStyle: {
@@ -24,6 +27,32 @@ const _styles = {
         flex: '0 0 auto',
         overflow: 'hidden',
         alignItems: 'stretch'
+    },
+
+    // See resize detector comments in renderResizeDetectorIfNeeded() method below.
+    resizeDetectorContainerStyles: {
+        position: 'absolute',
+        left: '0',
+        top: '0',
+        right: '0',
+        bottom: '0',
+        overflow: 'scroll',
+        zIndex: '-1',
+        visibility: 'hidden'
+    },
+
+    resizeGrowDetectorStyles: {
+        position: 'absolute',
+        left: '100500px',
+        top: '100500px',
+        width: '1px',
+        height: '1px'
+    },
+
+    resizeShrinkDetectorStyles: {
+        position: 'absolute',
+        width: '150%',
+        height: '150%'
     }
 };
 
@@ -38,23 +67,145 @@ if (typeof document !== 'undefined') {
 
 export interface ViewContext {
     isRxParentAText?: boolean;
+    focusManager?: FocusManager;
 }
 
 export class View extends ViewBase<Types.ViewProps, {}> {
     static contextTypes: React.ValidationMap<any> = {
-        isRxParentAText: React.PropTypes.bool
+        isRxParentAText: PropTypes.bool,
+        focusManager: PropTypes.object
     };
     context: ViewContext;
 
     static childContextTypes: React.ValidationMap<any> = {
-        isRxParentAText: React.PropTypes.bool.isRequired
+        isRxParentAText: PropTypes.bool.isRequired,
+        focusManager: PropTypes.object
     };
+
+    private _focusManager: FocusManager;
+
+    private _resizeDetectorAnimationFrame: number;
+    private _resizeDetectorNodes: { grow?: HTMLElement, shrink?: HTMLElement } = {};
+
+    constructor(props: Types.ViewProps) {
+        super(props);
+
+        if (props.restrictFocusWithin) {
+            this._focusManager = new FocusManager();
+        }
+    }
+
+    private _renderResizeDetectorIfNeeded(containerStyles: any): React.ReactNode {
+        // If needed, additional invisible DOM elements will be added inside the
+        // view to track the size changes that are performed behind our back by
+        // the browser's layout engine faster (ViewBase checks for the layout
+        // updates once a second and sometimes it's not fast enough).
+
+        // Unfortunately <div> doesn't have `resize` event, so we're trying to
+        // detect the fact that the view has been resized with `scroll` events.
+        // To do that, we create two scrollable <div>s and we put them into a
+        // state in which `scroll` event is triggered by the browser when the
+        // container gets resized (one element triggers `scroll` when the
+        // container gets bigger, another triggers `scroll` when the container
+        // gets smaller).
+
+        if (!this.props.importantForLayout) {
+            return null;
+        }
+
+        if (containerStyles.position !== 'relative') {
+            console.error('View: importantForLayout property is applicable only for a view with relative position');
+            return null;
+        }
+
+        let initResizer = (key: 'grow' | 'shrink', ref: React.DOMComponent<React.HTMLAttributes>) => {
+            const cur: HTMLElement = this._resizeDetectorNodes[key];
+            const element = ReactDOM.findDOMNode<HTMLElement>(ref);
+
+            if (cur) {
+                delete this._resizeDetectorNodes[key];
+            }
+
+            if (element) {
+                this._resizeDetectorNodes[key] = element;
+            }
+
+            this._resizeDetectorOnScroll();
+        };
+
+        return [
+            (
+                <div
+                    key={ 'grow' }
+                    style={ _styles.resizeDetectorContainerStyles }
+                    ref={ (ref) => initResizer('grow', ref) }
+                    onScroll={ () => this._resizeDetectorOnScroll() }>
+
+                    <div style={ _styles.resizeGrowDetectorStyles }></div>
+                </div>
+            ),
+            (
+                <div
+                    key={ 'shrink' }
+                    style={ _styles.resizeDetectorContainerStyles }
+                    ref={ (ref) => initResizer('shrink', ref) }
+                    onScroll={ () => this._resizeDetectorOnScroll() }>
+
+                    <div style={ _styles.resizeShrinkDetectorStyles }></div>
+                </div>
+            )
+        ];
+    }
+
+    private _resizeDetectorReset() {
+        // Scroll the detectors to the bottom-right corner so
+        // that `scroll` events will be triggered when the container
+        // is resized.
+        const scrollMax = 100500;
+
+        let node = this._resizeDetectorNodes.grow;
+
+        if (node) {
+            node.scrollLeft = scrollMax;
+            node.scrollTop = scrollMax;
+        }
+
+        node = this._resizeDetectorNodes.shrink;
+
+        if (node) {
+            node.scrollLeft = scrollMax;
+            node.scrollTop = scrollMax;
+        }
+    }
+
+    private _resizeDetectorOnScroll() {
+        if (this._resizeDetectorAnimationFrame) {
+            // Do not execute action more often than once per animation frame.
+            return;
+        }
+
+        this._resizeDetectorAnimationFrame = window.requestAnimationFrame(() => {
+            this._resizeDetectorReset();
+            this._resizeDetectorAnimationFrame = undefined;
+            ViewBase._checkViews();
+        });
+
+    }
 
     getChildContext() {
         // Let descendant Types components know that their nearest Types ancestor is not an Types.Text.
         // Because they're in an Types.View, they should use their normal styling rather than their
         // special styling for appearing inline with text.
-        return { isRxParentAText: false };
+        let childContext: ViewContext = {
+            isRxParentAText: false
+        };
+
+        // Provide the descendants with the focus manager (if any).
+        if (this._focusManager) {
+            childContext.focusManager = this._focusManager;
+        }
+
+        return childContext;
     }
 
     protected _getContainerRef(): React.Component<any, any> {
@@ -66,7 +217,7 @@ export class View extends ViewBase<Types.ViewProps, {}> {
         const ariaRole = AccessibilityUtil.accessibilityTraitToString(this.props.accessibilityTraits);
         const ariaSelected = AccessibilityUtil.accessibilityTraitToAriaSelected(this.props.accessibilityTraits);
         const isAriaHidden = AccessibilityUtil.isHidden(this.props.importantForAccessibility);
-        
+
         let props: Types.AccessibilityHtmlAttributes = {
             role: ariaRole,
             tabIndex: this.props.tabIndex,
@@ -100,18 +251,19 @@ export class View extends ViewBase<Types.ViewProps, {}> {
         if (childAnimationsEnabled) {
             reactElement = (
                 <AnimateListEdits
-                    {...props}
-                    animateChildEnter={this.props.animateChildEnter}
-                    animateChildMove={this.props.animateChildMove}
-                    animateChildLeave={this.props.animateChildLeave}
+                    { ...props }
+                    animateChildEnter={ this.props.animateChildEnter }
+                    animateChildMove={ this.props.animateChildMove }
+                    animateChildLeave={ this.props.animateChildLeave }
                 >
-                    {this.props.children}
+                    { this.props.children }
                 </AnimateListEdits>
             );
         } else {
             reactElement = (
-                <div {...props} >
-                    {this.props.children}
+                <div { ...props } >
+                    { this._renderResizeDetectorIfNeeded(combinedStyles) }
+                    { this.props.children }
                 </div>
             );
         }
@@ -120,6 +272,35 @@ export class View extends ViewBase<Types.ViewProps, {}> {
             restyleForInlineText(reactElement) :
             reactElement;
     }
+
+    componentWillReceiveProps(nextProps: Types.ViewProps) {
+        super.componentWillReceiveProps(nextProps);
+
+        if (!!this.props.restrictFocusWithin !== !!nextProps.restrictFocusWithin) {
+            console.error('View: restrictFocusWithin is readonly and changing it during the component life cycle has no effect');
+        }
+    }
+
+    componentDidMount() {
+        super.componentDidMount();
+
+        if (this._focusManager) {
+            this._focusManager.restrictFocusWithin();
+        }
+    }
+
+    componentWillUnmount() {
+        super.componentWillUnmount();
+
+        if (this._focusManager) {
+            this._focusManager.release();
+        }
+    }
 }
+
+applyFocusableComponentMixin(View, function (nextProps?: Types.ViewProps) {
+    let tabIndex: number = nextProps && ('tabIndex' in nextProps) ? nextProps.tabIndex : this.props.tabIndex;
+    return tabIndex !== undefined && tabIndex !== -1;
+});
 
 export default View;

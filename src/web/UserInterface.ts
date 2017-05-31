@@ -83,6 +83,18 @@ export class UserInterface extends RX.UserInterface {
         return SyncTasks.Resolved(1);
     }
 
+    getMaxContentSizeMultiplier(): SyncTasks.Promise<number> {
+        // Browsers don't support font-specific scaling. They scale all of their
+        // UI elements the same.
+        return SyncTasks.Resolved(0);
+    }
+
+    setMaxContentSizeMultiplier(maxContentSizeMultiplier: number) {
+        // Browsers don't support font-specific scaling. They scale all of their
+        // UI elements the same.
+        // No-op.
+    }
+
     isHighPixelDensityScreen(): boolean {
         return this.getPixelRatio() > 1;
     }
@@ -106,19 +118,6 @@ export class UserInterface extends RX.UserInterface {
 
     dismissKeyboard() {
         // Nothing to do
-    }
-
-    layoutChangePending() {
-        if (!this._layoutChangeAnimationFrame) {
-            // ViewBase checks for the layout changes once a second or on window resize.
-            // To avoid laggy layout updates we can indicate that there is a change pending.
-            this._layoutChangeAnimationFrame = window.requestAnimationFrame(() => {
-                this._layoutChangeAnimationFrame = undefined;
-                let event = document.createEvent('HTMLEvents');
-                event.initEvent('resize', true, false);
-                window.dispatchEvent(event);
-            });
-        }
     }
 }
 

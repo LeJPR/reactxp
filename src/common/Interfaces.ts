@@ -36,7 +36,6 @@ export interface ReactXP {
     Network: Network;
     Platform: Platform;
     Popup: Popup;
-    Profiling: Profiling;
     ScrollView: typeof ScrollView;
     StatusBar: StatusBar;
     Styles: Styles;
@@ -59,7 +58,7 @@ export interface ReactXP {
 export class ActivityIndicator<S> extends React.Component<Types.ActivityIndicatorProps, S> {}
 
 export abstract class Alert {
-    abstract show(title: string, message?: string, buttons?: Types.AlertButtonSpec[]): void;
+    abstract show(title: string, message?: string, buttons?: Types.AlertButtonSpec[], icon?: string): void;
 }
 
 export abstract class AnimatedComponent<P extends Types.CommonProps, T> extends React.Component<P, T> {
@@ -95,13 +94,6 @@ export abstract class AnimatedValue implements IAnimatedValue {
     abstract removeListener(id: string): void;
     abstract removeAllListeners(): void;
     abstract interpolate(config: any): AnimatedValue;
-}
-
-export abstract class Profiling {
-  abstract start(): void;
-  abstract stop(): void;
-  abstract printResults(config: Types.ProfilingLoggingConfig): void;
-  abstract installWatchdog(): void;
 }
 
 export abstract class App {
@@ -140,9 +132,6 @@ export abstract class UserInterface {
 
     // On-screen Keyboard
     abstract dismissKeyboard(): void;
-
-    // Explicit layout change indication
-    abstract layoutChangePending(): void;
 }
 
 export abstract class Modal {
