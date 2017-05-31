@@ -249,41 +249,7 @@ export class Styles extends RX.Styles {
                 def.flex = '0 0 auto';
             }
         }
-
-        if (def.transform) {
-            let transformStrings: string[] = [];
-            let animatedTransforms: { type: string, value: Object }[] = [];
-
-            _.each(def.transform, (t: { [key: string]: string }) => {
-                _.each(_.keys(t), key => {
-                    // Animated transforms use AnimatedValue objects rather
-                    // than strings. We need to store these separately.
-                    if (typeof t[key] === 'object') {
-                        animatedTransforms.push({ type: key, value: t[key] });
-                    } else {
-                        let value: string = t[key].toString();
-                        if (key.indexOf('rotate') === 0) {
-                            value += 'deg';
-                        } else if (key.indexOf('translate') === 0) {
-                            value += 'px';
-                        }
-
-                        transformStrings.push(key + '(' + value + ')');
-                    }
-                });
-            });
-
-            delete def.transform;
-
-            if (transformStrings.length > 0) {
-                def['transform'] = transformStrings.join(' ');
-            }
-
-            if (animatedTransforms.length > 0) {
-                def['animatedTransform'] = animatedTransforms;
-            }
-        }
-
+        
         if (def.shadowOffset !== undefined || def.shadowRadius !== undefined || def.shadowColor !== undefined) {
             let width = 0;
             let height = 0;
