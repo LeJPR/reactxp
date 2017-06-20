@@ -1049,14 +1049,11 @@ export module Animated {
     export type ParallelFunction = (animations: Array<CompositeAnimation>) => CompositeAnimation;
     export var parallel: ParallelFunction;
 
-    export type EasingFunction = {
-        cssName: string;
-        function: (input: number) => number;
-    };
-
+    export type EasingFunction = any;
+    
     export interface Easing {
         Default(): EasingFunction;
-        Linear(): EasingFunction;
+        Linear(input:number): EasingFunction;
         Out(): EasingFunction;
         In(): EasingFunction;
         InOut(): EasingFunction;
