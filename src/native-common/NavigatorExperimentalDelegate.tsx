@@ -108,7 +108,7 @@ export class NavigatorExperimentalDelegate extends NavigatorDelegate {
                 transitionSpec.duration = config.transitionSpec.duration;
             }
             if (config.transitionSpec.easing) {
-                transitionSpec.easing = config.transitionSpec.easing.function;
+                transitionSpec.easing = config.transitionSpec.easing;
             }
             
             nativeConfig.transitionSpec = transitionSpec;

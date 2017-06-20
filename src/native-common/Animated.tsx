@@ -152,7 +152,7 @@ var timing = function(
             function animate() : void {
                 let timingConfig: RN.AnimatedTimingConfig = {
                     toValue: config.toValue,
-                    easing: config.easing ? config.easing.function : null,
+                    easing: config.easing ? config.easing : null,
                     duration: config.duration,
                     delay: config.delay,
                     isInteraction: config.isInteraction,
