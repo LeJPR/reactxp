@@ -112,10 +112,6 @@ export class UserInterface extends RX.UserInterface {
         FrontLayerViewManager.setMainView(element);
     }
 
-    setHOC(element: React.ReactElement<any>): void {
-        FrontLayerViewManager.setHOC(element);
-    }
-
     useCustomScrollbars(enable = true) {
         ScrollViewConfig.setUseCustomScrollbars(enable);
     }

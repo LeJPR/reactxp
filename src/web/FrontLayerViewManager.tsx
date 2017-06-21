@@ -16,7 +16,6 @@ import Types = require('../common/Types');
 
 export class FrontLayerViewManager {
     private _mainView: React.ReactElement<any> = null;
-    private _HOC: Function = null;
     private _modalStack: { modal: React.ReactElement<Types.ViewProps>, id: string }[] = [];
 
     private _activePopupOptions: Types.PopupOptions = null;
@@ -28,11 +27,6 @@ export class FrontLayerViewManager {
 
     setMainView(element: React.ReactElement<any>): void {
         this._mainView = element;
-        this._renderRootView();
-    }
-
-    setHOC(hocFunction: Function): void {
-        this._HOC = hocFunction;
         this._renderRootView();
     }
 
@@ -164,10 +158,6 @@ export class FrontLayerViewManager {
                 onDismissPopup={ () => this.dismissPopup(this._activePopupId) }
             />
         );
-
-        if(this._HOC) {
-            rootView = this._HOC(rootView);
-        }
 
         const container = document.getElementsByClassName('app-container')[0];
 
